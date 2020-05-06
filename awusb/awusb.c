@@ -1,10 +1,10 @@
 /* -*- linux-c -*- */
 
-/* 
+/*
  * Driver for AW USB which is for downloading firmware
  *
- * Cesc 
- * 
+ * Cesc
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of the
@@ -21,12 +21,17 @@
  *
  *
  * Changelog:
- *           
+ *
  * */
 
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/signal.h>
+
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#include <linux/sched/signal.h>
+#endif
+
 #include <linux/sched.h>
 #include <linux/hardirq.h>     //<linux/smp_lock.h>
 #include <linux/errno.h>
@@ -79,7 +84,7 @@ struct allwinner_usb {
 
 /* by Cesc */
 struct usb_param {
-	unsigned		test_num;	
+	unsigned		test_num;
 	unsigned		p1;    /* parameter 1 */
 	unsigned		p2;
 	unsigned		p3;
@@ -123,7 +128,7 @@ static struct allwinner_usb aw_instance;
 static int open_aw(struct inode *inode, struct file *file)
 {
 	struct allwinner_usb *aw = &aw_instance;
-	struct usb_interface* intf;// = aw->aw_intf; 
+	struct usb_interface* intf;// = aw->aw_intf;
 	struct usb_host_interface *iface_desc;
 	struct usb_endpoint_descriptor *endpoint;
 	int subminor;
@@ -210,7 +215,7 @@ static long ioctl_aw(struct file *file, unsigned int cmd, unsigned long arg)
 			printk(KERN_DEBUG"ioctl_aw--AWUSB_IOCRESET\n");
 			break;
 
-		case AWUSB_IOCSET:    
+		case AWUSB_IOCSET:
 
 			if (copy_from_user(&param_tmp, (void __user *)arg, sizeof(param_tmp)))
 				retval= -EFAULT;
@@ -262,7 +267,7 @@ static long ioctl_aw(struct file *file, unsigned int cmd, unsigned long arg)
 			//stage 2, send data to usb device
 			nPipe = usb_sndbulkpipe(aw->aw_dev, aw->bulk_out_endpointAddr);
 			result = usb_bulk_msg(aw->aw_dev, nPipe,
-					aw->obuf, buffer_len, &actual_len, MAX_TIME_WAIT);  
+					aw->obuf, buffer_len, &actual_len, MAX_TIME_WAIT);
 			if (result) {
 				printk(KERN_ERR"Write Whoops - %d", (int)result);
 				printk(KERN_ERR"send pipe - %u", nPipe);
